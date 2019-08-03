@@ -1,56 +1,33 @@
-var sha256 = require('js-sha256');
+const sha256 = require('js-sha256');
 
 class Block{
-    constructor(index,data, prevHash) {
+    constructor(index, timestamp, data, prevHash) {
         this.index = index;
-            this.timestamp = Math.floor(Date.now() / 1000);
+        this.timestamp = timestamp;
         this.data = data;
         this.prevHash = prevHash;
-    }
-
-    getHash () {
-        return sha256(JSON.stringify(this.data + this.prevHash + this.index + this.timestamp));
-    }
-}
-
-class BlockChain {
-    constructor() {
-        this.chain = [];
-    }
-
-    addBlock(data) {
-        let index = this.chain.length;
-        let prevHash = this.chain.length !== 0 ? this.chain[this.chain.length - 1].hash : 0;
-        let block = new Block(index, data, prevHash);
-
-        this.chain.push(block);
-    }
-
-    chainIsValid () {
-        for (var i=0; i<this.chain.length; i++) {
-            if(this.chain[i].hash !== this.chain[i].getHash()) {
-                return false;
-            }
-            if(i>0 && this.chain[i].prevHash !==this.chain[i-1].hash) {
-                return false;
-            }
-        }
-
-        return true;
+        this.thisHash = sha256(
+            this.index + this.timestamp + this.data + this.prevHash
+        )
     }
 }
 
-const CILCoin = new BlockChain();
+const createGenesisBlock = () => new Block(0, Date.now(), 'Genesis Block', '0');
 
-CILCoin.addBlock({sender: "Bruce wayne", receiver: "Tony stark", amount: 100});
+const nextBlock = (lastBlock, data) => 
+    new Block(lastBlock.index + 1, Date.now(), data, lastBlock.thisHash);
 
-CILCoin.addBlock({sender: "Harrison wells", receiver: "Han solo", amount: 50});
+const createBlockChain = num => {
+    const blockchain = [createGenesisBlock()];
+    let previousBlock = blockchain[0];
 
-CILCoin.addBlock({sender: "Tony stark", receiver: "Ned stark", amount: 75});
+    for (let i =1; i < num; i += 1 ) {
+        const blockToAdd = nextBlock(previousBlock, `This is block #${i}`);
+        blockchain.push(blockToAdd);
+        previousBlock = blockToAdd;
+    }
+    console.dir(blockchain);
+};
 
-CILCoin.addBlock({sender: "Adnan", receiver: "Leon", amount: 75});
-
- 
-console.log(JSON.stringify(CILCoin, null, 4));
-
-console.log('Validity: ', CILCoin.chainIsValid());
+ const lengthToCreate = 20;
+ createBlockChain(lengthToCreate);
